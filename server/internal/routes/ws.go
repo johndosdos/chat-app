@@ -1,34 +1,29 @@
 package routes
 
 import (
-	"context"
+	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/coder/websocket"
-	"github.com/coder/websocket/wsjson"
 )
 
-func WebsocketHandler(w http.ResponseWriter, r *http.Request) {
-	conn, err := websocket.Accept(w, r, nil)
-	if err != nil {
-		log.Printf("Error: failed to accept websocket connection: %v", err)
-		return
-	}
-	defer conn.CloseNow()
+func WebsocketHandler(port string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Allow the vite dev server for cross-origin resource sharing
+		devUrl := "localhost:" + port
+		fmt.Println("[server] Establishing WebSocket server")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+		// This handler demonstrates how to safely accept cross origin WebSockets
+		// from the origin example.com.
 
-	var data any
-	err = wsjson.Read(ctx, conn, data)
-	if err != nil {
-		log.Printf("Error: failed to read json: %v", err)
-		return
-	}
-
-	log.Printf("Message: %v", data)
-
-	conn.Close(websocket.StatusNormalClosure, "")
+		conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
+			OriginPatterns: []string{devUrl},
+		})
+		if err != nil {
+			log.Printf("[error] %v\n", err)
+			return
+		}
+		defer conn.Close(websocket.StatusNormalClosure, "Connection closed")
+	})
 }

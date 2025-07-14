@@ -9,7 +9,8 @@ import (
 )
 
 func main() {
-	const port = "8080"
+	const port = "8600"
+	const devPort = "5173"
 	fmt.Printf("Starting server on port %v...\n", port)
 
 	router := http.NewServeMux()
@@ -24,7 +25,7 @@ func main() {
 	})
 
 	// Handle websocket endpoint.
-	router.HandleFunc("/ws", routes.WebsocketHandler)
+	router.Handle("/ws", routes.WebsocketHandler(devPort))
 
 	log.Fatal(server.ListenAndServe())
 }
