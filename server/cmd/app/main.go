@@ -13,6 +13,10 @@ func main() {
 	fmt.Printf("Starting server on port %v...\n", port)
 
 	router := http.NewServeMux()
+	server := &http.Server{
+		Addr:    ":" + port,
+		Handler: router,
+	}
 
 	// Handle root endpoint.
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -21,11 +25,6 @@ func main() {
 
 	// Handle websocket endpoint.
 	router.HandleFunc("/ws", routes.WebsocketHandler)
-
-	server := &http.Server{
-		Addr:    ":" + port,
-		Handler: router,
-	}
 
 	log.Fatal(server.ListenAndServe())
 }
