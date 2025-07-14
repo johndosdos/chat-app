@@ -4,10 +4,20 @@
     <meta charset="UTF-8" />
     <!-- <link rel="icon" type="image/svg+xml" href="/vite.svg" /> -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script type="module" src="/src/main.ts"></script>
+    <link rel="stylesheet" href="./style.css">
     <title>Chat app</title>
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <div class="container">
+      <div id="message-window">
+        <p class="server-message">Server: Welcome to the chat!</p>
+        <p class="client-message">Client: Hello server!</p>
+      </div>
+      <div class="input-area">
+        <textarea id="message-input"
+          placeholder="Write your message here"></textarea>
+        <button id="submit-button">Submit</button>
+      </div>
   </body>
 </html>
