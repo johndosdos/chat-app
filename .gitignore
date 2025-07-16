@@ -1,2 +1,6 @@
 /practice
 .vscode
+
+# server
+server/bin
+server/tmp
