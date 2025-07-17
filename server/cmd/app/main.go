@@ -9,9 +9,8 @@ import (
 )
 
 func main() {
-	const port = "8600"
-	const devPort = "5173"
-	fmt.Printf("Starting server on port %v...\n", port)
+	const port = "8080"
+	const vitePort = "5173"
 
 	router := http.NewServeMux()
 	server := &http.Server{
@@ -21,11 +20,13 @@ func main() {
 
 	// Handle root endpoint.
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Request received for %s from host %s", r.URL.Path, r.Host)
 		fmt.Fprint(w, "Hello from server!\n")
 	})
 
 	// Handle websocket endpoint.
-	router.Handle("/ws", routes.WebsocketHandler(devPort))
+	router.Handle("/ws", routes.WebsocketHandler(vitePort))
 
+	log.Printf("Starting server on %v...\n", server.Addr)
 	log.Fatal(server.ListenAndServe())
 }

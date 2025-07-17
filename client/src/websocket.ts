@@ -1,14 +1,20 @@
+import { handlerSubmit } from "./main";
+
 export function NewWebSocket(url: string) {
   const ws = new WebSocket(`${url}`);
-  console.log(`[state ${ws.CONNECTING}] Socket has been created. The connection is not yet open.`);
-
-  let message = "Hello from ws client.";
+  console.log(`${new Date().toLocaleString()} [state] Socket has been created. The connection is not yet open.`);
 
   // Establish connection to server
-  ws.addEventListener("open", (event) => {
-    console.log(`[state ${ws.OPEN}] The connection is open and ready to communicate: ${event}`);
-    console.log(`[protocol] ${ws.protocol}`);
-    ws.send(message)
+  let submitBtn = document.getElementById("submit-button");
+
+  ws.addEventListener("open", () => {
+    console.log(`${new Date().toLocaleString()} [state] The connection is open and ready to communicate`);
+
+    submitBtn?.addEventListener("click", (event) => {
+      event.preventDefault();
+
+      handlerSubmit(ws);
+    })
   });
 
   // Handle connection errors
@@ -18,10 +24,9 @@ export function NewWebSocket(url: string) {
 
   // Listen for incoming data from the server
   ws.addEventListener("message", (event) => {
-    console.log(`[server message] Received data from server: ${event.data}`)
     try {
       const parsedData = JSON.parse(event.data);
-      console.log(parsedData);
+      console.log(`${new Date().toLocaleDateString()} data: ${parsedData}`);
     } catch (error) {
       console.log(`[error] Received a non-JSON object or parsing error: ${event.data}`);
     }
