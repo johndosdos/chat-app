@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/johndosdos/chat_app/internal/clients"
 	"github.com/johndosdos/chat_app/internal/routes"
 )
 
@@ -24,8 +25,11 @@ func main() {
 		fmt.Fprint(w, "Hello from server!\n")
 	})
 
+	// Initialize map of clients
+	cls := clients.NewClients()
+
 	// Handle websocket endpoint.
-	router.Handle("/ws", routes.WebsocketHandler(vitePort))
+	router.Handle("/ws", routes.WebsocketHandler(vitePort, &cls))
 
 	log.Printf("Starting server on %v...\n", server.Addr)
 	log.Fatal(server.ListenAndServe())

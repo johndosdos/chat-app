@@ -6,9 +6,10 @@ import (
 	"net/http"
 
 	"github.com/coder/websocket"
+	"github.com/johndosdos/chat_app/internal/clients"
 )
 
-func WebsocketHandler(port string) http.Handler {
+func WebsocketHandler(port string, cls *clients.Clients) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Allow the vite dev server for cross-origin resource sharing
 		// Enable local network testing
@@ -28,25 +29,11 @@ func WebsocketHandler(port string) http.Handler {
 			log.Printf("[error] %v\n", err)
 			return
 		}
-		log.Println("[server] Client connected")
-		defer conn.CloseNow()
 
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
+		ctx := context.Background()
 
-		for {
-			_, data, err := conn.Read(ctx)
-			if err != nil {
-				if websocket.CloseStatus(err) != -1 {
-					log.Printf("[info] Client disconnected: %v\n", err)
-				} else {
-					log.Printf("[error] Failed to read connection: %v\n", err)
-				}
-				conn.Close(websocket.StatusNormalClosure, "[info] Connection closed")
-				return
-			}
-
-			log.Printf("[client msg] %v\n", string(data))
-		}
+		cl := clients.NewClient(conn)
+		cls.Add(cl.Id, cl)
+		go cl.ReadConn(ctx)
 	})
 }
