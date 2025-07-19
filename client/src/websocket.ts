@@ -35,7 +35,7 @@ export function NewWebSocket(url: string) {
   // Handle connection closure
   ws.addEventListener("close", (event) => {
     if (event.wasClean) {
-      console.log(`[accept] Connection successfully closed, code=${event.code}, reason=${event.reason}`);
+      console.log(`${new Date().toLocaleString()} [accept] Connection successfully closed, code=${event.code}, reason=${event.reason}`);
     } else {
       console.warn(`[warn] Connection died unexpectedly`);
     }
