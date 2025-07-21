@@ -1,4 +1,4 @@
-import { handlerSubmit } from "./main";
+import { appendServerMessageToWindow, handlerSubmit } from "./main";
 
 export function NewWebSocket(url: string) {
   const ws = new WebSocket(`${url}`);
@@ -24,12 +24,9 @@ export function NewWebSocket(url: string) {
 
   // Listen for incoming data from the server
   ws.addEventListener("message", (event) => {
-    try {
-      const parsedData = JSON.parse(event.data);
-      console.log(`${new Date().toLocaleDateString()} data: ${parsedData}`);
-    } catch (error) {
-      console.log(`[error] Received a non-JSON object or parsing error: ${event.data}`);
-    }
+    const parsedData = event.data;
+    appendServerMessageToWindow(parsedData);
+    console.log(`${new Date().toLocaleDateString()} data: ${parsedData}`);
   });
 
   // Handle connection closure

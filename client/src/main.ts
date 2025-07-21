@@ -30,4 +30,17 @@ export function appendClientMessageToWindow(message: string) {
   messageWindow.appendChild(messageDiv);
 }
 
+export function appendServerMessageToWindow(message: string) {
+  let messageWindow = document.getElementById("message-window");
+  if (!messageWindow) {
+    console.error("[error] element not found");
+    return;
+  }
+
+  let messageDiv = document.createElement("p");
+  messageDiv.classList.add("server-message");
+  messageDiv.textContent = `Server: ${message}`;
+  messageWindow.appendChild(messageDiv);
+}
+
 main();
