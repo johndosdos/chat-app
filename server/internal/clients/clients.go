@@ -1,8 +1,6 @@
 package clients
 
 import (
-	"context"
-	"log"
 	"sync"
 
 	"github.com/coder/websocket"
@@ -17,25 +15,6 @@ type client struct {
 type Clients struct {
 	mu   sync.Mutex
 	list map[uuid.UUID]client
-}
-
-func (cl *client) ReadConn(ctx context.Context) {
-	defer cl.Conn.Close(websocket.StatusNormalClosure, "Connection closed")
-
-	log.Printf("[server] Client %v connected\n", cl.Id)
-
-	for {
-		_, data, err := cl.Conn.Read(ctx)
-		if err != nil {
-			if websocket.CloseStatus(err) != -1 {
-				log.Printf("[info] Client %v disconnected: %v\n", cl.Id, err)
-			} else {
-				log.Printf("[error] Failed to read connection: %v\n", err)
-			}
-			return
-		}
-		log.Printf("[client %v msg] %v\n", cl.Id, string(data))
-	}
 }
 
 func NewClient(conn *websocket.Conn) client {

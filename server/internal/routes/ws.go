@@ -31,9 +31,27 @@ func WebsocketHandler(port string, cls *clients.Clients) http.Handler {
 		}
 
 		ctx := context.Background()
+		serverMsg := "hello clients, from server"
 
 		cl := clients.NewClient(conn)
 		cls.Add(cl.Id, cl)
-		go cl.ReadConn(ctx)
+
+		defer cl.Conn.Close(websocket.StatusNormalClosure, "Connection closed")
+
+		log.Printf("[server] Client %v connected\n", cl.Id)
+
+		for {
+			_, data, err := cl.Conn.Read(ctx)
+			if err != nil {
+				if websocket.CloseStatus(err) != -1 {
+					log.Printf("[info] Client %v disconnected: %v\n", cl.Id, err)
+				} else {
+					log.Printf("[error] Failed to read connection: %v\n", err)
+				}
+				return
+			}
+			log.Printf("[client %v msg] %v\n", cl.Id, string(data))
+			go cls.Broadcast(ctx, serverMsg)
+		}
 	})
 }
