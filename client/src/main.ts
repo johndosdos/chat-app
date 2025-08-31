@@ -2,7 +2,12 @@ import "./style.css";
 
 const messages = document.getElementById("messages") as HTMLUListElement;
 
-const ws = new WebSocket(`wss://${window.location.hostname}:8080/ws`);
+const urlScheme = window.location.protocol === "https:" ? "wss" : "ws";
+const host =
+	window.location.hostname === "localhost"
+		? `${window.location.hostname}:8080`
+		: `${window.location.hostname}`;
+const ws = new WebSocket(`${urlScheme}://${host}/ws`);
 const messageInput = document.getElementById(
 	"messageInput",
 ) as HTMLInputElement;
