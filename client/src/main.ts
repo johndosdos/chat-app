@@ -22,11 +22,6 @@ messageInput.addEventListener("keydown", (event) => {
 		//
 		//
 		// This is a bad approach. We want to append the message to message window
-		// only if the message was sent successfully.
-		// I'm tired so I'm enabling this.
-		appendMessage(messages, "client", messageInput.value);
-		//
-		//
 		// only if the message was sent successfully. We may send JSON from
 		// the client to the server like this:
 		//
