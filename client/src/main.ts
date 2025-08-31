@@ -1,9 +1,9 @@
 import './style.css'
 
-const messages = document.getElementById("messages");
+const messages = document.getElementById("messages") as HTMLUListElement;
 
-const ws = new WebSocket("ws://localhost:8080/ws");
-const messageInput = document.getElementById("messageInput");
+const ws = new WebSocket(`ws://${window.location.hostname}:8080/ws`);
+const messageInput = document.getElementById("messageInput") as HTMLInputElement;
 
 messageInput.addEventListener("keydown", (event) => {
 	if (event.key === "Enter") {
@@ -20,7 +20,7 @@ messageInput.addEventListener("keydown", (event) => {
 	}
 });
 
-function appendMessage(parent, source, message) {
+function appendMessage(parent: HTMLUListElement, source: string, message: any) {
 	const li = document.createElement("li");
 	li.textContent = message;
 
@@ -42,7 +42,7 @@ ws.onmessage = (event) => {
 };
 
 ws.onclose = (event) => {
-	console.log(`[Connection closed] ${event.reason}`);
+	console.log(`Connection closed ${event.reason}`);
 };
 
 ws.onerror = (error) => {
