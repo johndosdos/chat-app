@@ -2,7 +2,7 @@ import './style.css'
 
 const messages = document.getElementById("messages") as HTMLUListElement;
 
-const ws = new WebSocket(`ws://${window.location.hostname}:8080/ws`);
+const ws = new WebSocket(`wss://${window.location.hostname}:8080/ws`);
 const messageInput = document.getElementById("messageInput") as HTMLInputElement;
 
 messageInput.addEventListener("keydown", (event) => {
