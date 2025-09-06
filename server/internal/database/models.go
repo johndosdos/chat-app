@@ -9,7 +9,8 @@ import (
 )
 
 type Message struct {
-	ID        pgtype.UUID
+	ID        int32
+	UserID    pgtype.UUID
 	Content   string
 	CreatedAt pgtype.Timestamp
 }
