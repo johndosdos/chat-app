@@ -7,21 +7,23 @@ package database
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createMessage = `-- name: CreateMessage :one
-INSERT INTO messages (id, content)
+INSERT INTO messages (user_id, content)
 VALUES ($1, $2)
 RETURNING id, user_id, content, created_at
 `
 
 type CreateMessageParams struct {
-	ID      int32
+	UserID  pgtype.UUID
 	Content string
 }
 
 func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error) {
-	row := q.db.QueryRow(ctx, createMessage, arg.ID, arg.Content)
+	row := q.db.QueryRow(ctx, createMessage, arg.UserID, arg.Content)
 	var i Message
 	err := row.Scan(
 		&i.ID,
