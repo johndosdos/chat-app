@@ -10,20 +10,30 @@ import (
 )
 
 const createMessage = `-- name: CreateMessage :one
-INSERT INTO messages (content)
-VALUES ($1)
-RETURNING id, content, created_at
+INSERT INTO messages (id, content)
+VALUES ($1, $2)
+RETURNING id, user_id, content, created_at
 `
 
-func (q *Queries) CreateMessage(ctx context.Context, content string) (Message, error) {
-	row := q.db.QueryRow(ctx, createMessage, content)
+type CreateMessageParams struct {
+	ID      int32
+	Content string
+}
+
+func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error) {
+	row := q.db.QueryRow(ctx, createMessage, arg.ID, arg.Content)
 	var i Message
-	err := row.Scan(&i.ID, &i.Content, &i.CreatedAt)
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Content,
+		&i.CreatedAt,
+	)
 	return i, err
 }
 
 const listMessages = `-- name: ListMessages :many
-SELECT id, content, created_at FROM messages
+SELECT id, user_id, content, created_at FROM messages
 ORDER BY created_at DESC
 `
 
@@ -36,7 +46,12 @@ func (q *Queries) ListMessages(ctx context.Context) ([]Message, error) {
 	var items []Message
 	for rows.Next() {
 		var i Message
-		if err := rows.Scan(&i.ID, &i.Content, &i.CreatedAt); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Content,
+			&i.CreatedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
