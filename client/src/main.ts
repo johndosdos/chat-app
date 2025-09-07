@@ -12,29 +12,26 @@ const messageInput = document.getElementById(
 	"messageInput",
 ) as HTMLInputElement;
 
+const message = {
+	user_id: "",
+	content: "",
+};
+
 messageInput.addEventListener("keydown", (event) => {
 	if (event.key === "Enter") {
 		if (!messageInput.value) {
 			return;
 		}
 
-		ws.send(messageInput.value);
-		//
-		//
-		// This is a bad approach. We want to append the message to message window
-		// only if the message was sent successfully. We may send JSON from
-		// the client to the server like this:
-		//
-		// message = {
-		// 		id: <random_id>,
-		//		text: <user_input>,
-		// }
-		//
-		// The server would then send back a confirmation that the message was received.
-		// But I don't wanna deal with it.
+		// NEED TO DISPLAY WHO SENT THE MESSAGE/S...
+
+		message.user_id = crypto.randomUUID();
+		message.content = messageInput.value;
+
+		const msgJSON = JSON.stringify(message);
+		ws.send(msgJSON);
+
 		appendMessage(messages, "client", messageInput.value);
-		//
-		//
 		console.log(`[Client] ${messageInput.value}`);
 		messageInput.value = "";
 	}
