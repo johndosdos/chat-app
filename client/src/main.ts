@@ -1,5 +1,3 @@
-import "./style.css";
-
 const messages = document.getElementById("messages") as HTMLUListElement;
 
 const urlScheme = window.location.protocol === "https:" ? "wss" : "ws";
@@ -32,29 +30,15 @@ messageInput.addEventListener("keydown", (event) => {
 		ws.send(msgJSON);
 
 		appendMessage(messages, "client", messageInput.value);
-		console.log(`[Client] ${messageInput.value}`);
 		messageInput.value = "";
 	}
 });
-
-function appendMessage(parent: HTMLUListElement, source: string, message: any) {
-	const li = document.createElement("li");
-	li.textContent = message;
-
-	if (source === "server") {
-		li.className = "received-message";
-	} else if (source === "client") {
-		li.className = "sent-message";
-	}
-	parent.appendChild(li);
-}
 
 ws.onopen = () => {
 	console.log("Connected to server");
 };
 
 ws.onmessage = (event) => {
-	console.log(`[Server] ${event.data}`);
 	appendMessage(messages, "server", event.data);
 };
 
@@ -65,3 +49,34 @@ ws.onclose = (event) => {
 ws.onerror = (error) => {
 	console.log(`[WebSocket error] ${error}`);
 };
+
+function appendMessage(
+	parent: HTMLUListElement,
+	source: string,
+	message: string,
+) {
+	const li = document.createElement("li");
+	const div = document.createElement("div");
+
+	li.className = "flex flex-col w-full my-0.5";
+	div.className = "rounded-2xl break-words p-2.5";
+
+	if (source === "server") {
+		const span = document.createElement("span");
+
+		li.className += " items-start";
+		div.className += " bg-gray-200 text-gray-800 ";
+		span.className = "text-xs text-gray-500 pl-1";
+		span.textContent = "server";
+
+		li.appendChild(span);
+		li.appendChild(div);
+	} else if (source === "client") {
+		li.className += " items-end";
+		div.className += " bg-blue-500 text-white";
+
+		li.appendChild(div);
+	}
+	div.textContent = message;
+	parent.appendChild(li);
+}
