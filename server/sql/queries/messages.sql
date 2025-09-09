@@ -5,4 +5,4 @@ RETURNING *;
 
 -- name: ListMessages :many
 SELECT * FROM messages
-ORDER BY created_at DESC;
+ORDER BY created_at ASC;
