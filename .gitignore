@@ -1,3 +1,4 @@
 backup.*
 server/main
 .env
+server/tmp
