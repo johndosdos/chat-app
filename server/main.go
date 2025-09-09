@@ -21,7 +21,7 @@ var (
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
 	clients   = make(map[*websocket.Conn]uuid.UUID)
-	broadcast = make(chan *message)
+	broadcast = make(chan message)
 	mu        = sync.Mutex{}
 
 	dbConn    *pgx.Conn
@@ -29,8 +29,8 @@ var (
 )
 
 type message struct {
-	UserID  uuid.UUID `json:"user_id"`
-	Content []byte    `json:"content"`
+	UserID  uuid.UUID
+	Content string `json:"content"`
 }
 
 func main() {
@@ -101,14 +101,15 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Process JSON from client.
-		var msgJSON *message
-		err = json.Unmarshal(p, msgJSON)
+		var msgJSON message
+		err = json.Unmarshal(p, &msgJSON)
 		if err != nil {
 			log.Printf("[Error] failed to process JSON: %v", err)
 			break
 		}
 
 		// Send data to the broadcast channel.
+		msgJSON.UserID = userID
 		broadcast <- msgJSON
 	}
 }
@@ -120,7 +121,7 @@ func handleMessages() {
 		msg := <-broadcast
 
 		// Sanitize the message before broadcasting.
-		sanitized := p.SanitizeBytes(msg.Content)
+		sanitized := p.Sanitize(msg.Content)
 
 		// Create message entry to database.
 		_, err := dbQueries.CreateMessage(context.Background(), database.CreateMessageParams{
@@ -139,7 +140,7 @@ func handleMessages() {
 		mu.Lock()
 		for conn, clientID := range clients {
 			if msg.UserID != clientID {
-				err := conn.WriteMessage(websocket.TextMessage, sanitized)
+				err := conn.WriteMessage(websocket.TextMessage, []byte(sanitized))
 				if err != nil {
 					log.Printf("[Error] failed to write data to client")
 					delete(clients, conn)

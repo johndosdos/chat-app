@@ -21,9 +21,6 @@ messageInput.addEventListener("keydown", (event) => {
 			return;
 		}
 
-		// NEED TO DISPLAY WHO SENT THE MESSAGE/S...
-
-		message.user_id = crypto.randomUUID();
 		message.content = messageInput.value;
 
 		const msgJSON = JSON.stringify(message);
