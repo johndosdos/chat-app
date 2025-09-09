@@ -4,6 +4,8 @@ WORKDIR /app
 
 # Install sqlc CLI for schemas
 RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+# Install goose CLI for migrations
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 
 COPY go.mod go.sum ./
 RUN go mod download
