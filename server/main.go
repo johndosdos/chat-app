@@ -1,29 +1,54 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/johndosdos/chat-app/server/internal/database"
+	"github.com/microcosm-cc/bluemonday"
 )
 
 var (
 	upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
 	}
-	clients   = make(map[*websocket.Conn]bool)
+	clients   = make(map[*websocket.Conn]uuid.UUID)
 	broadcast = make(chan message)
 	mu        = sync.Mutex{}
+
+	dbConn    *pgx.Conn
+	dbQueries *database.Queries
 )
 
 type message struct {
-	sender  *websocket.Conn
-	content []byte
+	UserID  uuid.UUID
+	Content string `json:"content"`
 }
 
 func main() {
 	port := ":8080"
+	ctx := context.Background()
+
+	// database init start
+	var err error
+	dbURL := os.Getenv("DB_URL")
+	dbConn, err = pgx.Connect(ctx, dbURL)
+	if err != nil {
+		log.Printf("[Error] cannot connect to postgresql database: %v", err)
+		return
+	}
+	defer dbConn.Close(ctx)
+
+	dbQueries = database.New(dbConn)
+	// database init end
 
 	http.Handle("/", http.FileServer(http.Dir("./client")))
 	http.HandleFunc("/ws", handleConnection)
@@ -44,9 +69,25 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 
 	// We need to prevent race conditions when multiple clients are connecting.
 	// to our server.
+	userID := uuid.New()
 	mu.Lock()
-	clients[ws] = true
+	clients[ws] = userID
 	mu.Unlock()
+
+	// Send the last 50 messages to the client on new connection.
+	msgList, err := dbQueries.ListMessages(context.Background())
+	if err != nil {
+		log.Printf("[error] failed to load messages from database: %v", err)
+		return
+	} else {
+		for _, msg := range msgList {
+			err := ws.WriteMessage(websocket.TextMessage, []byte(msg.Content))
+			if err != nil {
+				log.Printf("[Error] failed to load messages to client")
+				break
+			}
+		}
+	}
 
 	// Process received data for broadcasting to clients.
 	for {
@@ -59,26 +100,50 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Send data to the broadcast channel.
-		broadcast <- message{
-			sender:  ws,
-			content: p,
+		// Process JSON from client.
+		var msgJSON message
+		err = json.Unmarshal(p, &msgJSON)
+		if err != nil {
+			log.Printf("[Error] failed to process JSON: %v", err)
+			break
 		}
+
+		// Send data to the broadcast channel.
+		msgJSON.UserID = userID
+		broadcast <- msgJSON
 	}
 }
 
 func handleMessages() {
+	p := bluemonday.StrictPolicy()
+
 	for {
 		msg := <-broadcast
 
+		// Sanitize the message before broadcasting.
+		sanitized := p.Sanitize(msg.Content)
+
+		// Create message entry to database.
+		_, err := dbQueries.CreateMessage(context.Background(), database.CreateMessageParams{
+			UserID: pgtype.UUID{
+				Bytes: msg.UserID,
+				Valid: true,
+			},
+			Content: string(sanitized),
+		})
+		if err != nil {
+			log.Printf("[error] failed to create entry to database: %v", err)
+			break
+		}
+
 		// Acquire a lock to prevent race conditions.
 		mu.Lock()
-		for client := range clients {
-			if msg.sender != client {
-				err := client.WriteMessage(websocket.TextMessage, msg.content)
+		for conn, clientID := range clients {
+			if msg.UserID != clientID {
+				err := conn.WriteMessage(websocket.TextMessage, []byte(sanitized))
 				if err != nil {
 					log.Printf("[Error] failed to write data to client")
-					delete(clients, client)
+					delete(clients, conn)
 				}
 			}
 		}

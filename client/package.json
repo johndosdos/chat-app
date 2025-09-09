@@ -10,7 +10,12 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.2.3",
     "typescript": "~5.8.3",
     "vite": "^7.1.2"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.13",
+    "tailwindcss": "^4.1.13"
   }
 }
