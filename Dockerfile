@@ -30,4 +30,4 @@ COPY --from=builder /server /server
 COPY --from=builder /go/bin/goose /goose
 COPY --from=frontend-builder /app/dist /client
 EXPOSE 8080
-CMD [ "/server" ]
+CMD [ "sh", "-c", "goose -dir ./sql/schema postgres $DB_URL up && /server" ]
