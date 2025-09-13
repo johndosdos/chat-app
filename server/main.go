@@ -2,28 +2,20 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
-	"sync"
+	"os/signal"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/johndosdos/chat-app/server/internal/database"
-	"github.com/microcosm-cc/bluemonday"
+
+	"github.com/johndosdos/chat-app/server/internal/handler"
+	ws "github.com/johndosdos/chat-app/server/internal/websocket"
 )
 
 var (
-	upgrader = websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool { return true },
-	}
-	clients   = make(map[*websocket.Conn]uuid.UUID)
-	broadcast = make(chan message)
-	mu        = sync.Mutex{}
-
 	dbConn    *pgx.Conn
 	dbQueries *database.Queries
 )
@@ -35,7 +27,7 @@ type message struct {
 
 func main() {
 	port := ":8080"
-	ctx := context.Background()
+	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 
 	// database init start
 	var err error
@@ -50,103 +42,16 @@ func main() {
 	dbQueries = database.New(dbConn)
 	// database init end
 
-	http.Handle("/", http.FileServer(http.Dir("./client")))
-	http.HandleFunc("/ws", handleConnection)
+	// client hub init start
+	// hub.Run is our central hub that is always listening for client related
+	// events.
+	hub := ws.NewHub()
+	go hub.Run(ctx)
+	// client hub init end
 
-	go handleMessages()
+	http.Handle("/", http.FileServer(http.Dir("./client")))
+	http.HandleFunc("/ws", handler.ServeWs(ctx, hub, dbQueries))
 
 	log.Println("Server starting at port", port)
 	log.Fatal(http.ListenAndServe(port, nil))
-}
-
-func handleConnection(w http.ResponseWriter, r *http.Request) {
-	ws, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Printf("[error] failed to upgrade connection to WebSocket: %v", err)
-		return
-	}
-	defer ws.Close()
-
-	// We need to prevent race conditions when multiple clients are connecting.
-	// to our server.
-	userID := uuid.New()
-	mu.Lock()
-	clients[ws] = userID
-	mu.Unlock()
-
-	// Send the last 50 messages to the client on new connection.
-	msgList, err := dbQueries.ListMessages(context.Background())
-	if err != nil {
-		log.Printf("[error] failed to load messages from database: %v", err)
-		return
-	} else {
-		for _, msg := range msgList {
-			err := ws.WriteMessage(websocket.TextMessage, []byte(msg.Content))
-			if err != nil {
-				log.Printf("[Error] failed to load messages to client")
-				break
-			}
-		}
-	}
-
-	// Process received data for broadcasting to clients.
-	for {
-		_, p, err := ws.ReadMessage()
-		if err != nil {
-			// If the client was disconnected.
-			mu.Lock()
-			delete(clients, ws)
-			mu.Unlock()
-			return
-		}
-
-		// Process JSON from client.
-		var msgJSON message
-		err = json.Unmarshal(p, &msgJSON)
-		if err != nil {
-			log.Printf("[Error] failed to process JSON: %v", err)
-			break
-		}
-
-		// Send data to the broadcast channel.
-		msgJSON.UserID = userID
-		broadcast <- msgJSON
-	}
-}
-
-func handleMessages() {
-	p := bluemonday.StrictPolicy()
-
-	for {
-		msg := <-broadcast
-
-		// Sanitize the message before broadcasting.
-		sanitized := p.Sanitize(msg.Content)
-
-		// Create message entry to database.
-		_, err := dbQueries.CreateMessage(context.Background(), database.CreateMessageParams{
-			UserID: pgtype.UUID{
-				Bytes: msg.UserID,
-				Valid: true,
-			},
-			Content: string(sanitized),
-		})
-		if err != nil {
-			log.Printf("[error] failed to create entry to database: %v", err)
-			break
-		}
-
-		// Acquire a lock to prevent race conditions.
-		mu.Lock()
-		for conn, clientID := range clients {
-			if msg.UserID != clientID {
-				err := conn.WriteMessage(websocket.TextMessage, []byte(sanitized))
-				if err != nil {
-					log.Printf("[Error] failed to write data to client")
-					delete(clients, conn)
-				}
-			}
-		}
-		mu.Unlock()
-	}
 }
