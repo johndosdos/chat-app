@@ -7,8 +7,10 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/a-h/templ"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	components "github.com/johndosdos/chat-app/server/components/chat"
 	"github.com/johndosdos/chat-app/server/internal/database"
 
 	"github.com/johndosdos/chat-app/server/internal/handler"
@@ -49,7 +51,9 @@ func main() {
 	go hub.Run(ctx)
 	// client hub init end
 
-	http.Handle("/", http.FileServer(http.Dir("./client")))
+	fs := http.FileServer(http.Dir("static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	http.Handle("/", templ.Handler(components.Base()))
 	http.HandleFunc("/ws", handler.ServeWs(ctx, hub, dbQueries))
 
 	log.Println("Server starting at port", port)

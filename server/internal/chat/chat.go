@@ -18,7 +18,7 @@ func DbStoreMessage(ctx context.Context, db database.Queries, recvFromHub chan M
 	for {
 		select {
 		case message := <-recvFromHub:
-			dbMessage, err := db.CreateMessage(ctx, database.CreateMessageParams{
+			_, err := db.CreateMessage(ctx, database.CreateMessageParams{
 				UserID:  pgtype.UUID{Bytes: [16]byte(message.From), Valid: true},
 				Content: string(message.Content),
 			})
