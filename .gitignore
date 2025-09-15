@@ -2,3 +2,4 @@ backup.*
 server/main
 .env
 server/tmp
+node_modules
