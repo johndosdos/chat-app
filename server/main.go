@@ -48,7 +48,7 @@ func main() {
 	// hub.Run is our central hub that is always listening for client related
 	// events.
 	hub := ws.NewHub()
-	go hub.Run(ctx)
+	go hub.Run(ctx, dbQueries)
 	// client hub init end
 
 	fs := http.FileServer(http.Dir("static"))

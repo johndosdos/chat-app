@@ -5,29 +5,12 @@ import (
 	"log"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/johndosdos/chat-app/server/internal/database"
 )
 
 type Message struct {
-	Content []byte
+	Content string `json:"content"`
 	From    uuid.UUID
-}
-
-func DbStoreMessage(ctx context.Context, db database.Queries, recvFromHub chan Message) {
-	for {
-		select {
-		case message := <-recvFromHub:
-			_, err := db.CreateMessage(ctx, database.CreateMessageParams{
-				UserID:  pgtype.UUID{Bytes: [16]byte(message.From), Valid: true},
-				Content: string(message.Content),
-			})
-			if err != nil {
-				log.Printf("[DB error] failed to store message to database: %v", err)
-				return
-			}
-		}
-	}
 }
 
 func DbLoadChatHistory(ctx context.Context, recv chan Message, db *database.Queries) {
@@ -42,7 +25,7 @@ func DbLoadChatHistory(ctx context.Context, recv chan Message, db *database.Quer
 	for _, msg := range dbMessageList {
 		recv <- Message{
 			From:    msg.UserID.Bytes,
-			Content: []byte(msg.Content),
+			Content: msg.Content,
 		}
 	}
 }

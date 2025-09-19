@@ -5,7 +5,9 @@ import (
 	"log"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/johndosdos/chat-app/server/internal/chat"
+	"github.com/johndosdos/chat-app/server/internal/database"
 	"github.com/microcosm-cc/bluemonday"
 )
 
@@ -16,6 +18,7 @@ type Hub struct {
 	accept     chan chat.Message
 	sendToDb   chan chat.Message
 	sanitizer  sanitizer
+	Ok         chan bool
 }
 
 type sanitizer interface {
@@ -23,22 +26,21 @@ type sanitizer interface {
 	SanitizeBytes(p []byte) []byte
 }
 
-func (h *Hub) Run(ctx context.Context) {
+func (h *Hub) Run(ctx context.Context, db *database.Queries) {
 	for {
 		select {
 		case client := <-h.Register:
 			client.userid = uuid.New()
 			h.clients[client.userid] = client
 			client.Hub = h
+			h.Ok <- true
 		case client := <-h.Unregister:
-			if _, ok := h.clients[client.userid]; ok {
-				delete(h.clients, client.userid)
-			}
+			delete(h.clients, client.userid)
 		case message := <-h.accept:
 			// We need to sanitize incoming messages to prevent XSS.
-			sanitized := h.sanitizer.SanitizeBytes(message.Content)
+			sanitized := h.sanitizer.Sanitize(message.Content)
 			message.Content = sanitized
-			h.sendToDb <- message
+			h.DbStoreMessage(ctx, db, message)
 			for _, client := range h.clients {
 				client.Recv <- message
 			}
@@ -46,6 +48,17 @@ func (h *Hub) Run(ctx context.Context) {
 			log.Printf("[error] context cancelled: %v", ctx.Err().Error())
 			return
 		}
+	}
+}
+
+func (h *Hub) DbStoreMessage(ctx context.Context, db *database.Queries, message chat.Message) {
+	_, err := db.CreateMessage(ctx, database.CreateMessageParams{
+		UserID:  pgtype.UUID{Bytes: [16]byte(message.From), Valid: true},
+		Content: string(message.Content),
+	})
+	if err != nil {
+		log.Printf("[DB error] failed to store message to database: %v", err)
+		return
 	}
 }
 
@@ -57,5 +70,6 @@ func NewHub() *Hub {
 		accept:     make(chan chat.Message),
 		sendToDb:   make(chan chat.Message),
 		sanitizer:  bluemonday.StrictPolicy(),
+		Ok:         make(chan bool),
 	}
 }

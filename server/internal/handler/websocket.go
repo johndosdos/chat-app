@@ -28,6 +28,10 @@ func ServeWs(ctx context.Context, h *ws.Hub, db *database.Queries) http.HandlerF
 		c := ws.NewClient(conn)
 		h.Register <- c
 
+		// Ok is a signalling channel from our hub, indicating if register was
+		// successful.
+		<-h.Ok
+
 		// Load recent chat history to current client.
 		go chat.DbLoadChatHistory(ctx, c.Recv, db)
 
