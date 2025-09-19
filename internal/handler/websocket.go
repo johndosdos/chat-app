@@ -7,9 +7,9 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/johndosdos/chat-app/server/internal/chat"
-	"github.com/johndosdos/chat-app/server/internal/database"
-	ws "github.com/johndosdos/chat-app/server/internal/websocket"
+	"github.com/johndosdos/chat-app/internal/chat"
+	"github.com/johndosdos/chat-app/internal/database"
+	ws "github.com/johndosdos/chat-app/internal/websocket"
 )
 
 func ServeWs(ctx context.Context, h *ws.Hub, db *database.Queries) http.HandlerFunc {

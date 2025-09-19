@@ -8,24 +8,18 @@ import (
 	"os/signal"
 
 	"github.com/a-h/templ"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	components "github.com/johndosdos/chat-app/server/components/chat"
-	"github.com/johndosdos/chat-app/server/internal/database"
+	components "github.com/johndosdos/chat-app/components/chat"
+	"github.com/johndosdos/chat-app/internal/database"
 
-	"github.com/johndosdos/chat-app/server/internal/handler"
-	ws "github.com/johndosdos/chat-app/server/internal/websocket"
+	"github.com/johndosdos/chat-app/internal/handler"
+	ws "github.com/johndosdos/chat-app/internal/websocket"
 )
 
 var (
 	dbConn    *pgx.Conn
 	dbQueries *database.Queries
 )
-
-type message struct {
-	UserID  uuid.UUID
-	Content string `json:"content"`
-}
 
 func main() {
 	port := ":8080"
