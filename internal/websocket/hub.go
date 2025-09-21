@@ -53,8 +53,9 @@ func (h *Hub) Run(ctx context.Context, db *database.Queries) {
 
 func (h *Hub) DbStoreMessage(ctx context.Context, db *database.Queries, message chat.Message) {
 	_, err := db.CreateMessage(ctx, database.CreateMessageParams{
-		UserID:  pgtype.UUID{Bytes: [16]byte(message.From), Valid: true},
-		Content: string(message.Content),
+		UserID:   pgtype.UUID{Bytes: [16]byte(message.Userid), Valid: true},
+		Username: message.Username,
+		Content:  string(message.Content),
 	})
 	if err != nil {
 		log.Printf("[DB error] failed to store message to database: %v", err)

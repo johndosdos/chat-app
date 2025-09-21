@@ -9,8 +9,9 @@ import (
 )
 
 type Message struct {
-	Content string `json:"content"`
-	From    uuid.UUID
+	Content  string `json:"content"`
+	Username string `json:"username"`
+	Userid   uuid.UUID
 }
 
 func DbLoadChatHistory(ctx context.Context, recv chan Message, db *database.Queries) {
@@ -21,11 +22,12 @@ func DbLoadChatHistory(ctx context.Context, recv chan Message, db *database.Quer
 		return
 	}
 
-	// Use the hub's accept channel.
+	// Use *Client recv channel.
 	for _, msg := range dbMessageList {
 		recv <- Message{
-			From:    msg.UserID.Bytes,
-			Content: msg.Content,
+			Userid:   msg.UserID.Bytes,
+			Username: msg.Username,
+			Content:  msg.Content,
 		}
 	}
 }

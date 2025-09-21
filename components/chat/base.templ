@@ -13,6 +13,22 @@ templ Base() {
 		</head>
 		<body class="bg-gray-100 dark:bg-gray-900 flex items-center justify-center min-h-screen p-4 font-sans overflow-hidden">
 			@ChatWindow()
+			// Here, we ask clients for their username through the window.prompt() method.
+			// We'll also be using local storage to store their usernames in the browser.
+			<script>
+				// Check if a username is stored in the local storage.
+				let username = localStorage.getItem("username");
+				if (!username) {
+					username = prompt("Please enter a username:", "Anonymous");
+					localStorage.setItem("username", username);
+				}
+
+				// Include the username as a parameter on initial (page load) websocket connection request
+				// to the server.
+				document.body.addEventListener("htmx:wsConfigSend", event => {
+					event.detail.parameters["username"] = username;
+				})
+			</script>
 		</body>
 	</html>
 }

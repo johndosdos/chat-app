@@ -37,7 +37,7 @@ func Base() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<script>\n\t\t\t\t// Check if a username is stored in the local storage.\n\t\t\t\tlet username = localStorage.getItem(\"username\");\n\t\t\t\tif (!username) {\n\t\t\t\t\tusername = prompt(\"Please enter a username:\", \"Anonymous\");\n\t\t\t\t\tlocalStorage.setItem(\"username\", username);\n\t\t\t\t}\n\n\t\t\t\t// Include the username as a parameter on initial (page load) websocket connection request\n\t\t\t\t// to the server.\n\t\t\t\tdocument.body.addEventListener(\"htmx:wsConfigSend\", event => {\n\t\t\t\t\tevent.detail.parameters[\"username\"] = username;\n\t\t\t\t})\n\t\t\t</script></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
